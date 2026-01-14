@@ -56,17 +56,18 @@ class MoeScraperClient:
 
     def download(
         self,
-        posts: list[Post],
+        posts,
         *,
-        out_dir: str = "out/images",
-        max_workers: int = 6,
-        overwrite: bool = False,
+        out_dir="out/images",
+        max_workers=2,
+        overwrite=False,
     ):
         return download_posts(
             posts,
             out_dir=out_dir,
             max_workers=max_workers,
             overwrite=overwrite,
+            user_agent=self.http.cfg.user_agent,  # pakai UA dari HttpConfig
         )
 
     def write_metadata_jsonl(self, posts: list[Post], out_path: str = "out/metadata.jsonl") -> None:
