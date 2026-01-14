@@ -17,11 +17,9 @@ def filter_posts(
     for p in posts:
         if not rating_allowed(p.rating, nsfw=nsfw):
             continue
-
         if min_width is not None and (p.width is None or p.width < min_width):
             continue
         if min_height is not None and (p.height is None or p.height < min_height):
             continue
-
         out.append(p)
     return out

@@ -9,8 +9,7 @@ from moescraper.core.models import Post
 
 def write_jsonl(posts: Iterable[Post], path: str | Path) -> Path:
     """
-    JSONL = 1 JSON object per line (newline-delimited JSON).
-    Cocok untuk dataset/streaming. :contentReference[oaicite:2]{index=2}
+    JSON Lines: 1 JSON object per line. :contentReference[oaicite:3]{index=3}
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

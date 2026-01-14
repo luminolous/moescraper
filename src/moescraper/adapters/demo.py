@@ -20,7 +20,6 @@ class DemoAdapter:
                     rating=SAFE,
                     width=1024,
                     height=768,
-                    md5=None,
                     extra={"note": "demo"},
                 ).normalized()
             )

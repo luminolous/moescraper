@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 from typing import Protocol
+
 from moescraper.core.models import Post
 
 
 class Adapter(Protocol):
     """
     Kontrak adapter:
-    - harus punya attribute: source: str
-    - harus punya method: search(...)
-    Structural typing => class tidak wajib inherit Adapter.
-    (PEP 544 / Protocols)
+      - source: str
+      - search(tags, page, limit) -> list[Post]
+
+    Structural subtyping (static duck typing) via Protocol (PEP 544). :contentReference[oaicite:2]{index=2}
     """
     source: str
 
