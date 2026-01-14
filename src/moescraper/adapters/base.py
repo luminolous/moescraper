@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import Protocol
+from abc import ABC, abstractmethod
 
+from moescraper.core.http import HttpClient
 from moescraper.core.models import Post
 
 
-class Adapter(Protocol):
-    """
-    Kontrak adapter:
-      - source: str
-      - search(tags, page, limit) -> list[Post]
+class BaseAdapter(ABC):
+    source_name: str
 
-    Structural subtyping (static duck typing) via Protocol (PEP 544). :contentReference[oaicite:2]{index=2}
-    """
-    source: str
+    def __init__(self, http: HttpClient):
+        self.http = http
 
-    def search(self, tags: list[str], page: int = 1, limit: int = 20) -> list[Post]:
-        ...
+    @abstractmethod
+    def search(self, tags: list[str], page: int, limit: int, nsfw: bool) -> list[Post]:
+        raise NotImplementedError
