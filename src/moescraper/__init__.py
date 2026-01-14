@@ -1,3 +1,3 @@
-__all__ = ["MoeScraperClient"]
-
 from .client import MoeScraperClient
+
+__all__ = ["MoeScraperClient"]
