@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 import httpx
@@ -17,7 +17,7 @@ class HttpConfig:
     follow_redirects: bool = True
     rate_limit_min_interval_s: float = 0.8
     rate_limit_jitter_s: float = 0.2
-    retry: RetryConfig = RetryConfig()
+    retry: RetryConfig = field(default_factory=RetryConfig)
 
 
 class HttpClient:
