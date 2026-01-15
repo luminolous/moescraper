@@ -1,3 +1,98 @@
 # MoeScraper
 
-> This project is still unfinished yet. You can come back later when it is finished. (๑>؂•̀๑)
+**Anime picture scraper toolkit (Python).**  
+Scrape & download images by tags from multiple sources (Danbooru / Safebooru / Zerochan), with rate limiting, retries, progress bar, and metadata export. You can use it to collect data for model / adapter (LoRA / LoRA+ / etc.) training.
+
+---
+
+## Features
+
+- Multi-source scraping via simple adapter interface
+- Tag-based search scraping to a target count (`client.scrape_images(...)`)
+  - Progress bar
+  - Resume support
+- Concurrent downloading (thread pool)
+- Metadata export:
+  - **JSONL** during scraping
+
+---
+
+## Supported Sources
+
+- **Danbooru** (`danbooru`) - 
+- **Safebooru** (`safebooru`) - 
+- **Zerochan** (`zerochan`) - 
+
+---
+
+## Installation
+
+```bash
+pip install "moescraper @ git+https://github.com/luminolous/moescraper.git"
+```
+
+---
+
+## How to use it
+
+Fetch up to **N images** with auto-pagination, progress bar, and resume.
+
+```python
+from moescraper import MoeScraperClient
+
+client = MoeScraperClient()
+
+client.scrape_images(
+    source="danbooru",                                # "danbooru" | "safebooru" | "zerochan"
+    tags=["stelle_(honkai:_star_rail)", "1girl"],     # your image tags: based on each website
+    n_images=1000,                                    # input your target total images
+    nsfw_mode="safe",                                 # "safe" | "all" | "nsfw"
+    out_dir="moescraper_result/images",
+    meta_jsonl="moescraper_result/metadata.jsonl",
+    index_db="moescraper_result/index.sqlite",
+    state_path="moescraper_result/scrape_state.json",
+    limit=200,                                        # per-page fetch size
+    max_workers=2,                                    # download concurrency
+)
+
+client.close()
+```
+
+### Output
+
+```
+moescraper_result/
+  images/                # downloaded images folder
+  metadata.jsonl         # JSONL lines for downloaded posts
+  index.sqlite           # SQLite index for dedupe/track exported
+  scrape_state.json      # resume cursor (page pointer)
+```
+
+---
+
+## Example Result
+
+![Example result](assets\example-result.png)
+
+---
+
+## NSFW Modes
+
+- `safe` → keep **safe / non-explicit** only
+- `all`  → keep everything
+- `nsfw` → keep **nsfw** only
+
+> Rating quality depends on each source; treat it as best-effort.
+
+---
+
+## Disclaimer
+
+>This project is for educational/research purposes. Please respect each website’s Terms of Service and the content licenses.
+Use polite rate limits.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
