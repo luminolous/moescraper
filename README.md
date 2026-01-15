@@ -57,7 +57,7 @@ client.scrape_images(
 client.close()
 ```
 
-### Output
+And the output will look like this:
 
 ```
 moescraper_result/
@@ -71,7 +71,7 @@ moescraper_result/
 
 ## Example Result
 
-![Example result](assets\example-result.png)
+![Example result](assets/example-result.png)
 
 ---
 
