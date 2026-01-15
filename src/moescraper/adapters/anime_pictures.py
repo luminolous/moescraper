@@ -1,75 +1,127 @@
+# moescraper/adapters/anime_pictures.py
 from __future__ import annotations
 
-import re
-from urllib.parse import quote_plus
+from dataclasses import dataclass
+from typing import List, Optional, Dict, Any
+import httpx
 
-from moescraper.core.models import Post, Rating
-from .base import BaseAdapter
+from moescraper.core.models import Post
 
+API_URL_CANDIDATES = [
+    "https://api.anime-pictures.net/api/v3/posts",   # sering jadi host baru
+    "https://anime-pictures.net/api/v3/posts",       # fallback
+]
 
-POST_ID_RE = re.compile(r"/posts/(\d+)")
-IMG_RE = re.compile(r"https?://(?:oimages|images)\.anime-pictures\.net/[^\s\"']+\.(?:jpg|jpeg|png|gif|webp|avif)", re.IGNORECASE)
-META_KEYWORDS_RE = re.compile(r'<meta[^>]+name="keywords"[^>]+content="([^"]+)"', re.IGNORECASE)
+def _as_list_tags(v: Any) -> List[str]:
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(x) for x in v]
+    if isinstance(v, str):
+        # kadang "tag1 tag2" atau "tag1,tag2"
+        return [t for t in v.replace(",", " ").split() if t]
+    return [str(v)]
 
+def _pick_posts_payload(data: Any) -> List[Dict[str, Any]]:
+    # kemungkinan bentuk payload:
+    # 1) {"posts": [...]}
+    # 2) {"data": [...]}
+    # 3) [...] langsung list
+    if isinstance(data, dict):
+        for k in ("posts", "data", "result", "items"):
+            if k in data and isinstance(data[k], list):
+                return data[k]
+        # kadang nested
+        if "response" in data and isinstance(data["response"], dict):
+            return _pick_posts_payload(data["response"])
+        return []
+    if isinstance(data, list):
+        return data
+    return []
 
-class AnimePicturesAdapter(BaseAdapter):
-    source_name = "anime_pictures"
-    base_url = "https://anime-pictures.net"
+def _normalize_file_host(url: Optional[str]) -> Optional[str]:
+    if not url:
+        return url
+    # laporan perubahan host images -> oimages :contentReference[oaicite:2]{index=2}
+    return url.replace("images.anime-pictures.net", "oimages.anime-pictures.net")
 
-    def search(self, tags: list[str], page: int, limit: int, nsfw: bool) -> list[Post]:
-        """
-        HTML-based (lebih tahan perubahan API):
-        1) GET /posts?lang=en&page=N (&search_tag=... dicoba)
-        2) regex ambil /posts/<id>
-        3) buka /posts/<id>?lang=en lalu regex ambil file_url
-        """
-        p0 = max(page - 1, 0)
+@dataclass
+class AnimePicturesAdapter:
+    http: Any  # HttpClient kamu
 
-        url = f"{self.base_url}/posts"
-        params = {"lang": "en", "page": p0}
+    def search(self, tags: List[str], page: int = 0, limit: int = 20, nsfw: bool = False) -> List[Post]:
+        tag_expr = " ".join(tags).strip()
 
-        if tags:
-            # param tag tidak 100% terdokumentasi → kita “best effort”
-            tag_expr = " ".join(tags)
-            params["search_tag"] = tag_expr  # kalau didukung
-            # beberapa site pakai "tags" atau "tag" → kamu bisa tambahin kalau perlu:
-            # params["tags"] = tag_expr
+        # beberapa kandidat nama param yang sering dipakai
+        params_variants = [
+            {"page": page, "limit": limit, "search_tag": tag_expr, "lang": "en"},
+            {"page": page, "limit": limit, "tags": tag_expr, "lang": "en"},
+            {"page": page, "limit": limit, "tag": tag_expr, "lang": "en"},
+        ]
 
-        html = self.http.get_text(url, params=params)
-        ids = list(dict.fromkeys(POST_ID_RE.findall(html)))  # unique preserve order
-        ids = ids[: max(1, limit)]
+        last_err: Optional[Exception] = None
 
-        posts: list[Post] = []
-        for pid in ids:
-            post_url = f"{self.base_url}/posts/{pid}"
-            post_html = self.http.get_text(post_url, params={"lang": "en"})
+        for api_url in API_URL_CANDIDATES:
+            for params in params_variants:
+                try:
+                    data = self.http.get_json(
+                        api_url,
+                        params=params,
+                        # header yang “wajar” untuk endpoint JSON
+                        headers={
+                            "Accept": "application/json,text/plain,*/*",
+                            "Referer": "https://anime-pictures.net/",
+                        },
+                    )
+                    raw_posts = _pick_posts_payload(data)
+                    if not raw_posts:
+                        continue
 
-            m_img = IMG_RE.search(post_html)
-            file_url = m_img.group(0) if m_img else None
+                    out: List[Post] = []
+                    for it in raw_posts[:limit]:
+                        post_id = str(it.get("id") or it.get("post_id") or "")
+                        file_url = _normalize_file_host(
+                            it.get("file_url") or it.get("image") or it.get("url")
+                        )
+                        preview_url = _normalize_file_host(
+                            it.get("preview_url") or it.get("sample_url") or it.get("thumb") or it.get("thumbnail")
+                        )
 
-            # tags dari meta keywords (best effort)
-            tags_out: list[str] = []
-            m_kw = META_KEYWORDS_RE.search(post_html)
-            if m_kw:
-                tags_out = [t.strip() for t in m_kw.group(1).split(",") if t.strip()]
+                        width = it.get("width") or it.get("w")
+                        height = it.get("height") or it.get("h")
 
-            # rating: site punya “erotic block/unblock”, tapi dari HTML publik sulit pasti → unknown
-            rating = Rating.UNKNOWN
+                        # rating di Anime-Pictures kadang tidak sejelas booru lain → set "unknown"
+                        rating = str(it.get("rating") or it.get("safe") or "unknown").lower()
 
-            posts.append(
-                Post(
-                    source=self.source_name,
-                    post_id=str(pid),
-                    file_url=file_url,
-                    preview_url=None,
-                    tags=tags_out,
-                    rating=rating,
-                    raw={"post_url": post_url},
-                )
-            )
+                        tags_norm = _as_list_tags(it.get("tags"))
 
-        # nsfw=False: buang yang jelas NSFW (di sini unknown → tetap)
-        if not nsfw:
-            # kalau kamu mau strict: return [p for p in posts if p.rating != Rating.UNKNOWN]
-            return posts
-        return posts
+                        out.append(
+                            Post(
+                                source="anime_pictures",
+                                post_id=post_id,
+                                file_url=file_url,
+                                preview_url=preview_url,
+                                tags=tags_norm,
+                                rating=rating,
+                                width=int(width) if width else None,
+                                height=int(height) if height else None,
+                                md5=str(it.get("md5") or "") or None,
+                            )
+                        )
+
+                    return out
+
+                except httpx.HTTPStatusError as e:
+                    # 403/404: coba varian endpoint/param lain
+                    if e.response is not None and e.response.status_code in (403, 404):
+                        last_err = e
+                        continue
+                    raise
+                except Exception as e:
+                    last_err = e
+                    continue
+
+        raise RuntimeError(
+            "Anime-Pictures: API berubah atau akses diblok (403). "
+            "Coba jalankan dari jaringan non-datacenter, atau pakai API endpoint terbaru."
+        ) from last_err

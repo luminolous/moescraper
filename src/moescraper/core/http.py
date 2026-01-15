@@ -21,29 +21,23 @@ class HttpConfig:
 
 
 class HttpClient:
-    def __init__(self, cfg: Optional[HttpConfig] = None):
-        self.cfg = cfg or HttpConfig()
-        self.limiter = RateLimiter(
-            min_interval_s=self.cfg.rate_limit_min_interval_s,
-            jitter_s=self.cfg.rate_limit_jitter_s,
-        )
+    def __init__(self, cfg, limiter):
+        self.cfg = cfg
+        self.limiter = limiter
         self.client = httpx.Client(
-            timeout=self.cfg.timeout_s,
-            follow_redirects=self.cfg.follow_redirects,
-            headers={"User-Agent": self.cfg.user_agent},
+            headers={"User-Agent": cfg.user_agent},
+            timeout=cfg.timeout_s,
+            follow_redirects=True,  # penting untuk sebagian site
         )
 
-    def close(self) -> None:
-        self.client.close()
-
-    def get_text(self, url: str, params: dict[str, Any] | None = None) -> str:
+    def get_json(self, url: str, params=None, headers=None):
         self.limiter.wait(domain_of(url))
-        resp = request_with_retry(self.client, "GET", url, self.cfg.retry, params=params)
+        resp = request_with_retry(self.client, "GET", url, self.cfg.retry, params=params, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_text(self, url: str, params=None, headers=None):
+        self.limiter.wait(domain_of(url))
+        resp = request_with_retry(self.client, "GET", url, self.cfg.retry, params=params, headers=headers)
         resp.raise_for_status()
         return resp.text
-
-    def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
-        text = self.get_text(url, params=params)
-        # some sites can return “dirty json”
-        cleaned = sanitize_json_text(text)
-        return httpx.Response(200, text=cleaned).json()
