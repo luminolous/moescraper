@@ -12,7 +12,7 @@ from .utils import domain_of, sanitize_json_text
 
 @dataclass
 class HttpConfig:
-    user_agent: str = "moescraper/0.1 (+https://github.com/yourname/moescraper)"
+    user_agent: str = "moescraper/0.1 (+https://github.com/luminolous/moescraper)"
     timeout_s: float = 25.0
     follow_redirects: bool = True
     rate_limit_min_interval_s: float = 0.8
@@ -21,23 +21,29 @@ class HttpConfig:
 
 
 class HttpClient:
-    def __init__(self, cfg, limiter):
-        self.cfg = cfg
-        self.limiter = limiter
+    def __init__(self, cfg: Optional[HttpConfig] = None):
+        self.cfg = cfg or HttpConfig()
+        self.limiter = RateLimiter(
+            min_interval_s=self.cfg.rate_limit_min_interval_s,
+            jitter_s=self.cfg.rate_limit_jitter_s,
+        )
         self.client = httpx.Client(
-            headers={"User-Agent": cfg.user_agent},
-            timeout=cfg.timeout_s,
-            follow_redirects=True,  # penting untuk sebagian site
+            timeout=self.cfg.timeout_s,
+            follow_redirects=self.cfg.follow_redirects,
+            headers={"User-Agent": self.cfg.user_agent},
         )
 
-    def get_json(self, url: str, params=None, headers=None):
-        self.limiter.wait(domain_of(url))
-        resp = request_with_retry(self.client, "GET", url, self.cfg.retry, params=params, headers=headers)
-        resp.raise_for_status()
-        return resp.json()
+    def close(self) -> None:
+        self.client.close()
 
-    def get_text(self, url: str, params=None, headers=None):
+    def get_text(self, url: str, params: dict[str, Any] | None = None) -> str:
         self.limiter.wait(domain_of(url))
-        resp = request_with_retry(self.client, "GET", url, self.cfg.retry, params=params, headers=headers)
+        resp = request_with_retry(self.client, "GET", url, self.cfg.retry, params=params)
         resp.raise_for_status()
         return resp.text
+
+    def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
+        text = self.get_text(url, params=params)
+        # some sites can return “dirty json”
+        cleaned = sanitize_json_text(text)
+        return httpx.Response(200, text=cleaned).json()
