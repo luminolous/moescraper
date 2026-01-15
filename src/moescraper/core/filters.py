@@ -18,7 +18,7 @@ def normalize_rating(value: str | None, source: str) -> Rating:
         if v in ("q", "questionable", "e", "explicit"):
             return Rating.NSFW
 
-    # Booru/Moebooru rating: safe/questionable/explicit (kadang s/q/e)
+    # Booru/Moebooru rating: safe/questionable/explicit
     if v in ("safe", "s"):
         return Rating.SAFE
     if v in ("questionable", "q"):
@@ -30,10 +30,6 @@ def normalize_rating(value: str | None, source: str) -> Rating:
 
 
 def passes_nsfw(post: Post, nsfw: bool) -> bool:
-    """
-    nsfw=False: buang yang jelas NSFW.
-    nsfw=True : ambil semua.
-    """
     if nsfw:
         return True
     return post.rating != Rating.NSFW

@@ -7,11 +7,6 @@ from dataclasses import dataclass, field
 
 @dataclass
 class RateLimiter:
-    """
-    Rate limit sederhana per-domain:
-    - minimal interval antar request (seconds)
-    - jitter kecil biar nggak “pola bot”
-    """
     min_interval_s: float = 0.8
     jitter_s: float = 0.2
     _last_time: dict[str, float] = field(default_factory=dict)

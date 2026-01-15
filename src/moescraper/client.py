@@ -13,11 +13,10 @@ from moescraper.adapters import (
     DanbooruAdapter,
     SafebooruAdapter,
     ZerochanAdapter,
-    AnimePicturesAdapter,
 )
 
 
-SourceName = Literal["danbooru", "safebooru", "zerochan", "anime_pictures"]
+SourceName = Literal["danbooru", "safebooru", "zerochan"]
 
 
 @dataclass
@@ -30,7 +29,6 @@ class MoeScraperClient:
             "danbooru": DanbooruAdapter(self.http),
             "safebooru": SafebooruAdapter(self.http),
             "zerochan": ZerochanAdapter(self.http),
-            "anime_pictures": AnimePicturesAdapter(self.http),
         }
 
     def close(self) -> None:

@@ -12,7 +12,6 @@ def domain_of(url: str) -> str:
 
 
 def sanitize_json_text(text: str) -> str:
-    # Untuk kasus JSON “kotor” (kadang kejadian di Zerochan)
     return _CONTROL_CHARS_RE.sub("", text)
 
 
