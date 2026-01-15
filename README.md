@@ -1,6 +1,6 @@
 # MoeScraper
 
-Anime picture scraper toolkit (Python). Scrape & download images by tags from multiple sources (Danbooru / Safebooru / Zerochan), with rate limiting, retries, progress bar, and metadata export. You can use it to collect data for model / adapter (LoRA / LoRA+ / etc.) training.
+Anime picture scraper toolkit. Scrape & download images by tags from multiple sources (Danbooru / Safebooru / Zerochan), with rate limiting, retries, progress bar, and metadata export. You can use it to collect data for model / adapter (LoRA / LoRA+ / etc.) training.
 
 ---
 
