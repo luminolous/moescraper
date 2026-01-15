@@ -15,12 +15,9 @@ class ZerochanAdapter(BaseAdapter):
     base_url = "https://www.zerochan.net"
 
     def search(self, tags: list[str], page: int, limit: int, nsfw: bool) -> list[Post]:
-        # Zerochan API: tambahkan ?json atau &json ke URL normal (dan pagination p=...)
-        # Kalau tags kosong, ambil latest.
-        p = max(page, 1)
+        p, limit = self.clamp(page=page, limit=limit)
 
         if tags:
-            # Zerochan biasanya pakai path /<tag> ; kalau multi-tag, gabung pakai +
             query = "+".join(quote_plus(t) for t in tags if t)
             url = f"{self.base_url}/{query}"
             params = {"p": p, "json": 1}
@@ -30,7 +27,6 @@ class ZerochanAdapter(BaseAdapter):
 
         data = self.http.get_json(url, params=params)
 
-        # Dari beberapa implementasi, biasanya ada field list "items"
         items = None
         if isinstance(data, dict):
             items = data.get("items") or data.get("results") or data.get("images")
@@ -41,7 +37,6 @@ class ZerochanAdapter(BaseAdapter):
 
         posts: list[Post] = []
         for it in items[: max(1, limit)]:
-            # Field names bisa beda-beda; ini dibuat toleran
             post_id = str(it.get("id") or it.get("image_id") or it.get("post") or it.get("pid") or "")
             file_url = it.get("full") or it.get("file") or it.get("source") or it.get("url")
             preview = it.get("thumbnail") or it.get("preview") or it.get("small")
@@ -53,7 +48,6 @@ class ZerochanAdapter(BaseAdapter):
             elif isinstance(t, list):
                 tags_out = [str(x) for x in t if x]
 
-            # nsfw heuristic: kalau ada tag “Adult Only” dsb
             rating = Rating.UNKNOWN
             joined = " ".join(tags_out)
             if _ADULT_TAG_RE.search(joined):

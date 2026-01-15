@@ -8,20 +8,15 @@ from .base import BaseAdapter
 class DanbooruAdapter(BaseAdapter):
     source_name = "danbooru"
     base_url = "https://danbooru.donmai.us"
+    hard_limit = 200
 
     def search(self, tags: list[str], page: int, limit: int, nsfw: bool) -> list[Post]:
-        # Danbooru pakai "space-separated tags"
-        q = " ".join(t for t in tags if t)
-
-        # nsfw False: exclude q/e
+        page, limit = self.clamp(page=page, limit=limit)
+        q = self.build_query(tags)
         if not nsfw:
             q = (q + " " if q else "") + "-rating:q -rating:e"
 
-        params = {
-            "tags": q,
-            "page": max(page, 1),
-            "limit": max(1, min(limit, 200)),
-        }
+        params = {"tags": q, "page": page, "limit": limit}
         url = f"{self.base_url}/posts.json"
         data = self.http.get_json(url, params=params)
 

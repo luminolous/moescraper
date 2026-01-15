@@ -8,13 +8,13 @@ from .base import BaseAdapter
 class SafebooruAdapter(BaseAdapter):
     source_name = "safebooru"
     base_url = "https://safebooru.org"
+    hard_limit = 200
 
     def search(self, tags: list[str], page: int, limit: int, nsfw: bool) -> list[Post]:
-        # Safebooru: DAPI, param "pid" 0-based
+        page, limit = self.clamp(page=page, limit=limit)
         pid = max(page - 1, 0)
-        q = " ".join(t for t in tags if t)
+        q = self.build_query(tags)
 
-        # “safebooru” harusnya safe, tapi tetap biar konsisten:
         if not nsfw:
             q = (q + " " if q else "") + "rating:safe"
 
@@ -25,7 +25,8 @@ class SafebooruAdapter(BaseAdapter):
             "json": 1,
             "tags": q,
             "pid": pid,
-            "limit": max(1, min(limit, 200)),
+            "limit": limit,
+            "tags": q,
         }
 
         url = f"{self.base_url}/index.php"
