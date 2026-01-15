@@ -32,7 +32,7 @@ def download_posts(
     posts: list[Post],
     out_dir: str | Path,
     *,
-    max_workers: int = 2,
+    max_workers: int = 1,
     overwrite: bool = False,
     timeout_s: float = 60.0,
     user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",

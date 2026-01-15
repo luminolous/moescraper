@@ -59,7 +59,7 @@ class MoeScraperClient:
         posts,
         *,
         out_dir="out/images",
-        max_workers=2,
+        max_workers=1,
         overwrite=False,
     ):
         return download_posts(
@@ -67,7 +67,7 @@ class MoeScraperClient:
             out_dir=out_dir,
             max_workers=max_workers,
             overwrite=overwrite,
-            user_agent=self.http.cfg.user_agent,  # pakai UA dari HttpConfig
+            user_agent=self.http.cfg.user_agent,  # used UA from HttpConfig
         )
 
     def write_metadata_jsonl(self, posts: list[Post], out_path: str = "out/metadata.jsonl") -> None:
