@@ -8,7 +8,7 @@ from moescraper.core.http import HttpClient, HttpConfig
 from moescraper.core.models import Post
 from moescraper.core.filters import filter_posts
 from moescraper.core.downloader import download_posts
-from moescraper.core.metadata import write_jsonl, write_csv, write_json
+from moescraper.core.metadata import write_jsonl, write_csv
 
 from moescraper.adapters.base import BaseAdapter
 from moescraper.adapters import DanbooruAdapter, SafebooruAdapter, ZerochanAdapter
