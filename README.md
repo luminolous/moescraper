@@ -24,17 +24,15 @@ Anime picture scraper toolkit. Scrape & download images by tags from multiple so
 
 ---
 
-## Installation
+## How to use it
+
+First, you need to install the package. You can copy this command and paste it in your terminal.
 
 ```bash
 pip install "moescraper @ git+https://github.com/luminolous/moescraper.git"
 ```
 
----
-
-## How to use it
-
-Fetch up to **N images** with auto-pagination, progress bar, and resume.
+And then, copy the code below and you can adjust it for the parameter settings.
 
 ```python
 from moescraper import MoeScraperClient
@@ -70,6 +68,8 @@ moescraper_result/
 ---
 
 ## Example Result
+
+This is an example of the scraping results folder.
 
 ![Example result](assets/example-result.png)
 
