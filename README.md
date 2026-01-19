@@ -89,9 +89,3 @@ This is an example of the scraping results folder.
 
 >This project is for educational/research purposes. Please respect each website’s Terms of Service and the content licenses.
 Use polite rate limits.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
