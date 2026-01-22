@@ -16,14 +16,6 @@ Anime picture scraper toolkit. Scrape & download images by tags from multiple so
 
 ---
 
-## Supported Sources
-
-- **Danbooru** (`danbooru`) - 
-- **Safebooru** (`safebooru`) - 
-- **Zerochan** (`zerochan`) - 
-
----
-
 ## How to use it
 
 First, you need to install the package. You can copy this command and paste it in your terminal.
@@ -89,3 +81,11 @@ This is an example of the scraping results folder.
 
 >This project is for educational/research purposes. Please respect each website’s Terms of Service and the content licenses.
 Use polite rate limits.
+
+---
+
+## Supported Sources
+
+- [**Danbooru**](https://danbooru.donmai.us) (`danbooru`)
+- [**Safebooru**](https://safebooru.org/) (`safebooru`)
+- [**Zerochan**](https://www.zerochan.net/) (`zerochan`)
