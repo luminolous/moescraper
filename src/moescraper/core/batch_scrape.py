@@ -43,6 +43,13 @@ class ScrapeConfig:
     resume: bool = True
     max_empty_pages: int = 10
 
+    # File-type filter
+    allowed_exts: Optional[set[str]] = None  # contoh: {"jpg", "png"}
+    allow_unknown_ext: bool = False
+
+    # Post-process downloaded files
+    freeze_apng: bool = True
+
 
 class IndexDB:
     def __init__(self, path: Path):
@@ -212,6 +219,8 @@ def scrape_to_count(client: "MoeScraperClient", cfg: ScrapeConfig) -> None:
                     st.get("source") == cfg.source
                     and st.get("tags") == cfg.tags
                     and st.get("nsfw_mode") == cfg.nsfw_mode
+                    and st.get("allowed_exts") == (sorted(cfg.allowed_exts) if cfg.allowed_exts else None)
+                    and st.get("allow_unknown_ext") == cfg.allow_unknown_ext
                 ):
                     page = int(st.get("page", page))
             except Exception:
@@ -230,6 +239,8 @@ def scrape_to_count(client: "MoeScraperClient", cfg: ScrapeConfig) -> None:
                 page=page,
                 limit=cfg.limit,
                 nsfw=search_nsfw,
+                allowed_exts=cfg.allowed_exts,
+                allow_unknown_ext=cfg.allow_unknown_ext,
             )
 
             batch = _apply_nsfw_mode(batch, cfg.nsfw_mode)
@@ -256,6 +267,9 @@ def scrape_to_count(client: "MoeScraperClient", cfg: ScrapeConfig) -> None:
                 max_workers=cfg.max_workers,
                 overwrite=cfg.overwrite,
                 user_agent=client.http.cfg.user_agent,
+                allowed_exts=cfg.allowed_exts,
+                allow_unknown_ext=cfg.allow_unknown_ext,
+                freeze_apng=cfg.freeze_apng,
             )
 
             db.mark_downloaded(batch, cfg.out_dir)
@@ -272,6 +286,8 @@ def scrape_to_count(client: "MoeScraperClient", cfg: ScrapeConfig) -> None:
                         "source": cfg.source,
                         "tags": cfg.tags,
                         "nsfw_mode": cfg.nsfw_mode,
+                        "allowed_exts": (sorted(cfg.allowed_exts) if cfg.allowed_exts else None),
+                        "allow_unknown_ext": cfg.allow_unknown_ext,
                         "page": page + 1,
                         "updated_at": int(time.time()),
                     },

@@ -82,6 +82,9 @@ class MoeScraperClient:
         overwrite: bool = False,
         resume: bool = True,
         max_empty_pages: int = 10,
+        allowed_exts: list[str] | set[str] | None = None,
+        allow_unknown_ext: bool = False,
+        freeze_apng: bool = True,
     ) -> None:
         from moescraper.core.batch_scrape import ScrapeConfig, scrape_to_count
 
@@ -107,6 +110,9 @@ class MoeScraperClient:
             overwrite=bool(overwrite),
             resume=bool(resume),
             max_empty_pages=int(max_empty_pages),
+            allowed_exts=set(allowed_exts) if allowed_exts else None,
+            allow_unknown_ext=bool(allow_unknown_ext),
+            freeze_apng=bool(freeze_apng),
         )
 
         scrape_to_count(self, cfg)
@@ -121,6 +127,8 @@ class MoeScraperClient:
         nsfw: bool = False,
         min_width: int | None = None,
         min_height: int | None = None,
+        allowed_exts: list[str] | set[str] | None = None,
+        allow_unknown_ext: bool = False,
     ) -> list[Post]:
         if source not in self.adapters:
             raise KeyError(f"Unknown source '{source}'. Available: {', '.join(self.available_sources())}")
@@ -132,7 +140,14 @@ class MoeScraperClient:
 
         adapter = self.adapters[source]
         posts = adapter.search(tags_list, page=page, limit=limit, nsfw=nsfw)
-        return filter_posts(posts, nsfw=nsfw, min_width=min_width, min_height=min_height)
+        return filter_posts(
+            posts,
+            nsfw=nsfw,
+            min_width=min_width,
+            min_height=min_height,
+            allowed_exts=set(allowed_exts) if allowed_exts else None,
+            allow_unknown_ext=bool(allow_unknown_ext),
+        )
 
     def download(
         self,
@@ -141,6 +156,9 @@ class MoeScraperClient:
         out_dir: str = "out/images",
         max_workers: int = 1,
         overwrite: bool = False,
+        allowed_exts: list[str] | set[str] | None = None,
+        allow_unknown_ext: bool = False,
+        freeze_apng: bool = True,
     ):
         return download_posts(
             posts,
@@ -148,18 +166,19 @@ class MoeScraperClient:
             max_workers=max_workers,
             overwrite=overwrite,
             user_agent=self.http.cfg.user_agent,
+            allowed_exts=set(allowed_exts) if allowed_exts else None,
+            allow_unknown_ext=bool(allow_unknown_ext),
+            freeze_apng=bool(freeze_apng),
         )
 
     def save_metadata(self, posts: list[Post], out_path: str = "out/metadata.jsonl") -> None:
-        """Format inferred from extension: .jsonl | .json | .csv"""
+        """Format inferred from extension: .jsonl | .csv"""
         if out_path.endswith(".jsonl"):
             write_jsonl(posts, out_path)
-        elif out_path.endswith(".json"):
-            write_json(posts, out_path)
         elif out_path.endswith(".csv"):
             write_csv(posts, out_path)
         else:
-            raise ValueError("out_path must end with .jsonl | .json | .csv")
+            raise ValueError("out_path must end with .jsonl | .csv")
 
     # Backward-compat
     def write_metadata_jsonl(self, posts: list[Post], out_path: str = "out/metadata.jsonl") -> None:
