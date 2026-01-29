@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+import json
 import httpx
 
 from .rate_limit import RateLimiter
@@ -42,8 +43,26 @@ class HttpClient:
         resp.raise_for_status()
         return resp.text
 
+    # def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
+    #     text = self.get_text(url, params=params)
+    #     # some sites can return “dirty json”
+    #     cleaned = sanitize_json_text(text)
+    #     return httpx.Response(200, text=cleaned).json()
+
     def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
         text = self.get_text(url, params=params)
-        # some sites can return “dirty json”
-        cleaned = sanitize_json_text(text)
-        return httpx.Response(200, text=cleaned).json()
+        cleaned = sanitize_json_text(text).strip()
+
+        if not cleaned:
+            raise ValueError(f"Empty response (not JSON) from {url} params={params}")
+
+        # Banyak kasus: HTML (Cloudflare, error page, dll)
+        if cleaned[:1] == "<":
+            snippet = cleaned[:300].replace("\n", " ")
+            raise ValueError(f"Non-JSON (looks like HTML) from {url}. Snippet: {snippet}")
+
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            snippet = cleaned[:300].replace("\n", " ")
+            raise ValueError(f"Invalid JSON from {url}. Snippet: {snippet}") from e
