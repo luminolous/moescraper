@@ -26,7 +26,6 @@ class SafebooruAdapter(BaseAdapter):
             "tags": q,
             "pid": pid,
             "limit": limit,
-            "tags": q,
         }
 
         url = f"{self.base_url}/index.php"

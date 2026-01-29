@@ -31,7 +31,13 @@ class HttpClient:
         self.client = httpx.Client(
             timeout=self.cfg.timeout_s,
             follow_redirects=self.cfg.follow_redirects,
-            headers={"User-Agent": self.cfg.user_agent},
+            headers={
+                "User-Agent": self.cfg.user_agent,
+                "Accept": "application/json,text/plain,*/*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://safebooru.org/",
+                "Accept-Encoding": "gzip, deflate",  # hindari br (brotli)
+            },
         )
 
     def close(self) -> None:
@@ -54,15 +60,32 @@ class HttpClient:
         cleaned = sanitize_json_text(text).strip()
 
         if not cleaned:
-            raise ValueError(f"Empty response (not JSON) from {url} params={params}")
+            return []
 
-        # Banyak kasus: HTML (Cloudflare, error page, dll)
         if cleaned[:1] == "<":
-            snippet = cleaned[:300].replace("\n", " ")
-            raise ValueError(f"Non-JSON (looks like HTML) from {url}. Snippet: {snippet}")
+            return []
 
         try:
             return json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            snippet = cleaned[:300].replace("\n", " ")
-            raise ValueError(f"Invalid JSON from {url}. Snippet: {snippet}") from e
+        except json.JSONDecodeError:
+            return []
+
+
+    # Debugging
+    # def get_json(self, url: str, params: dict[str, Any] | None = None) -> Any:
+    #     text = self.get_text(url, params=params)
+    #     cleaned = sanitize_json_text(text).strip()
+
+    #     if not cleaned:
+    #         raise ValueError(f"Empty response (not JSON) from {url} params={params}")
+
+    #     # Banyak kasus: HTML (Cloudflare, error page, dll)
+    #     if cleaned[:1] == "<":
+    #         snippet = cleaned[:300].replace("\n", " ")
+    #         raise ValueError(f"Non-JSON (looks like HTML) from {url}. Snippet: {snippet}")
+
+    #     try:
+    #         return json.loads(cleaned)
+    #     except json.JSONDecodeError as e:
+    #         snippet = cleaned[:300].replace("\n", " ")
+    #         raise ValueError(f"Invalid JSON from {url}. Snippet: {snippet}") from e
