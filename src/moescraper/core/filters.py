@@ -64,7 +64,7 @@ def normalize_rating(value: str | None, source: str) -> Rating:
     if source == "safebooru":
         return Rating.SAFE
     
-    if v in ("safe", "s", "general"):
+    if v in ("safe", "s"):
         return Rating.SAFE
     
     if v in ("questionable", "q", "explicit", "e"):
