@@ -42,6 +42,8 @@ client.scrape_images(
     state_path="moescraper_result/scrape_state.json",
     limit=200,                                        # per-page fetch size
     max_workers=2,                                    # download concurrency
+    allowed_exts=["jpg", "png"],                      # filter file type
+    freeze_apng=True,                                 # freeze animation on APNG file
 )
 
 client.close()
